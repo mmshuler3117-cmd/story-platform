@@ -2,6 +2,57 @@
 <html>
 <head>
   <title>Story App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      background: #f5f5f5;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #4CAF50;
+      color: white;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    .story-title {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .story-content {
+      margin-top: 5px;
+    }
+  </style>
 </head>
 <body>
 
@@ -9,16 +60,13 @@
 
   <h2>Create Story</h2>
 
-  <input id="title" placeholder="Title" />
-  <br><br>
-
-  <textarea id="content" placeholder="Content"></textarea>
-  <br><br>
-
-  <button onclick="submitStory()">Submit</button>
-
-  <h2>Stories</h2>
-  <button onclick="loadStories()">Load Stories</button>
+  <div class="card">
+    <h3>Create a Story</h3>
+    <input id="title" placeholder="Title"/>
+    <textarea id="content" placeholder="Write your Story..."></textarea>
+    <button onclick="submitStory()">Submit Story</button>
+    <button onclick="loadStories()">Load Stories</button>
+  </div>
 
   <div id="stories"></div>
 
@@ -31,27 +79,38 @@
 
       await fetch(`${API}/stories`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json" },
         body: JSON.stringify({ title, content })
       });
 
-      alert("Story sent!");
+      document.getElementById("title").value = "";
+      document.getElementById("content").value = "";
+
+      loadStories();
     }
 
     async function loadStories() {
       const res = await fetch(`${API}/stories`);
       const data = await res.json();
 
-      const container = document.getElementById("stories");
+      const container = document.getElementByID("stories");
       container.innerHTML = "";
 
       data.forEach(story => {
         const div = document.createElement("div");
-        div.innerHTML = `<h3>${story.title}</h3><p>${story.content}</p>`;
-        container.appendChild(div);
-      });
-    }
-  </script>
+        div.className="card";
 
+      div.innerHTML = `
+        <div class="story-title">${story.title}</div>
+        <div class="story-content">${story.content}</div>
+      `;
+
+      container.appendCHILD(div);
+    });
+  }
+
+  loadStories();
+  </script>
+  
 </body>
 </html>
