@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Story App</title>
+</head>
+<body>
+
+  <h1>My Story App</h1>
+
+  <h2>Create Story</h2>
+
+  <input id="title" placeholder="Title" />
+  <br><br>
+
+  <textarea id="content" placeholder="Content"></textarea>
+  <br><br>
+
+  <button onclick="submitStory()">Submit</button>
+
+  <h2>Stories</h2>
+  <button onclick="loadStories()">Load Stories</button>
+
+  <div id="stories"></div>
+
+  <script>
+    const API = "http://localhost:8000";
+
+    async function submitStory() {
+      const title = document.getElementById("title").value;
+      const content = document.getElementById("content").value;
+
+      await fetch(`${API}/stories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content })
+      });
+
+      alert("Story sent!");
+    }
+
+    async function loadStories() {
+      const res = await fetch(`${API}/stories`);
+      const data = await res.json();
+
+      const container = document.getElementById("stories");
+      container.innerHTML = "";
+
+      data.forEach(story => {
+        const div = document.createElement("div");
+        div.innerHTML = `<h3>${story.title}</h3><p>${story.content}</p>`;
+        container.appendChild(div);
+      });
+    }
+  </script>
+
+</body>
+</html>
