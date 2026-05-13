@@ -102,6 +102,7 @@
     <textarea id="content" placeholder="Write your Story..."></textarea>
     <button onclick="submitStory()">Submit Story</button>
     <button onclick="loadStories()">Load Stories</button>
+    
   </div>
 
   <div id="stories"></div>
@@ -149,6 +150,19 @@
 
         container.appendChild(div);
       });
+    }
+
+    async function deleteStory(index) {
+      console.log("Deleting:", index);
+
+      const res = await fetch(`${API}/stories/${index}`, {
+        method: "DELETE"
+      });
+
+      const data = await res.json();
+      console.log(data);
+
+      loadStories();
     }
 
   loadStories();
