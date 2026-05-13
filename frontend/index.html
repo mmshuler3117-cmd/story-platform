@@ -101,7 +101,7 @@
     <input id="title" placeholder="Title"/>
     <textarea id="content" placeholder="Write your Story..."></textarea>
     <button onclick="submitStory()">Submit Story</button>
-    <button onclick="loadStories()">Load Stories</button>
+    <button onclick="loadStories()">Open Library</button>
     
   </div>
 
@@ -133,29 +133,44 @@
       const container = document.getElementById("stories");
       container.innerHTML = "";
 
-      if (data.length === 0) {
-        container.innerHTML = "<p style='text-align:center; color:#777;'>No Stories yet... your library is empty.</p>";
+     if (data.length === 0) {
+        container.innerHTML = `
+          <p style="text-align:center; color:#777; font-style:italic;">
+            The library is closed. Open it to view stories.
+          </p>
+        `;
         return;
       }
 
-      data.forEach((story, index) => {
+      data.forEach((story) => {
         const div = document.createElement("div");
-        div.className="card";
+      div.className = "card";
 
-        div.innerHTML = `
-          <div class="story-title">${story.title}</div>
-          <div class="story-content">${story.content}</div>
-          <button class="delete" onclick="deleteStory(${index})">Remove</button>
-        `;
+      // start invisible
+      div.style.opacity = 0;
+      div.style.transition = "opacity 0.4s ease";
 
-        container.appendChild(div);
-      });
+      div.innerHTML = `
+        <div class="story-title">${story.title}</div>
+      <div class="story-content">${story.content}</div>
+      <button class="delete" onclick="deleteStory(${story.id})">
+        Remove
+      </button>
+    `;
+
+    container.appendChild(div);
+
+    // fade in after DOM insertion
+    setTimeout(() => {
+      div.style.opacity = 1;
+    }, 50);
+  });
     }
 
-    async function deleteStory(index) {
-      console.log("Deleting:", index);
+    async function deleteStory(id) {
+      console.log("Deleting:", id);
 
-      const res = await fetch(`${API}/stories/${index}`, {
+      const res = await fetch(`${API}/stories/${id}`, {
         method: "DELETE"
       });
 
@@ -165,7 +180,6 @@
       loadStories();
     }
 
-  loadStories();
   </script>
   
 </body>

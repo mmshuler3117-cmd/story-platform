@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from database import init_db, get_connection
 
 app = FastAPI()
+
+init_db()
 
 #  MUST BE HERE BEFORE ROUTES
 app.add_middleware(
@@ -12,8 +15,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-stories = []
 
 class Story(BaseModel):
     title: str
@@ -25,16 +26,39 @@ def home():
 
 @app.post("/stories")
 def create_story(story: Story):
-    stories.append(story)
-    return {"message": "Story created", "story": story}
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "Insert into stories (title, content) VALUES (?, ?)",
+        (story.title, story.content)
+    )
+
+    conn.commit()
+    conn.close()
 
 @app.get("/stories")
 def get_stories():
-    return stories
+    conn = get_connection()
+    cursor = conn.cursor()
 
-@app.delete("/stories/{index}")
-def delete_story(index: int):
-    if 0 <= index < len(stories):
-        removed = stories.pop(index)
-        return {"message": "Deleted", "story": removed}
-    return {"Error": "Invalid Index"}
+    cursor.execute("SELECT id, title, content FROM stories")
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    return [
+        {"id": r[0], "title": r[1], "content": r[2]}
+        for r in rows 
+    ]
+
+@app.delete("/stories/{story_id}")
+def delete_story(story_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM stories WHERE id = ?", (story_id,))
+    conn.commit()
+    conn.close()
+
+    return {"message": "Deleted"}
