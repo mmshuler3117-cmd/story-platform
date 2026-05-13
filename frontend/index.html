@@ -4,53 +4,89 @@
   <title>Story App</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 700px;
+      font-family: Georgia, serif;
+      max-width: 750px;
       margin: 40px auto;
-      background: #f5f5f5;
+      background: linear-gradient(145deg, #2c1f1a, #3a2a24); /* leather brown*/
+      color: #f5eee6; /* off white text*/
     }
 
     h1 {
       text-align: center;
+      color: #e8d8c3; /* warm light beige*/
+      letter-spacing: 1px;
     }
 
     .card {
-      background: white;
-      padding: 15px;
-      margin: 10px 0;
+      background: #f8f3ea; /*warm paper*/
+      padding: 16px;
+      margin: 12px 0;
       border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border: 1px solid #5a3e36;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      transition: all 0.25s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
     }
 
     input, textarea {
       width: 100%;
       padding: 10px;
-      margin: 5px 0;
+      margin: 6px 0;
       border-radius: 6px;
-      border: 1px solid #ccc;
+      border: 1px solid #c9b8a6;
+      background: #fffdf8;
+      font-family: Georgia, serif;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #8b5e3c;
+      box-shadow: 0 0 5px rgba(139, 94, 60, 0.2);
     }
 
     button {
-      padding: 10px 15px;
-      margin-top: 10px;
+      padding: 10px 14px;
+      margin-top: 8px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      background: #4CAF50;
-      color: white;
+      background: #6b3f2a;
+      color: #fff;
+      font-family: georgia, serif;
+      transition: 0.2s;
+    }
+
+    button:active {
+      transform: scale(0.98);
     }
 
     button:hover {
-      background: #45a049;
+      background: #8b4a2f;
+      transform: translate(-1px);
     }
 
     .story-title {
       font-weight: bold;
       font-size: 18px;
+      color: #3b2f2f;
     }
 
     .story-content {
-      margin-top: 5px;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    button.delete {
+      background: #8b1e1e;
+      margin-top: 10px;
+    }
+
+    button.delete:hover {
+      background: #a52a2a;
     }
   </style>
 </head>
@@ -93,21 +129,27 @@
       const res = await fetch(`${API}/stories`);
       const data = await res.json();
 
-      const container = document.getElementByID("stories");
+      const container = document.getElementById("stories");
       container.innerHTML = "";
 
-      data.forEach(story => {
+      if (data.length === 0) {
+        container.innerHTML = "<p style='text-align:center; color:#777;'>No Stories yet... your library is empty.</p>";
+        return;
+      }
+
+      data.forEach((story, index) => {
         const div = document.createElement("div");
         div.className="card";
 
-      div.innerHTML = `
-        <div class="story-title">${story.title}</div>
-        <div class="story-content">${story.content}</div>
-      `;
+        div.innerHTML = `
+          <div class="story-title">${story.title}</div>
+          <div class="story-content">${story.content}</div>
+          <button class="delete" onclick="deleteStory(${index})">Remove</button>
+        `;
 
-      container.appendCHILD(div);
-    });
-  }
+        container.appendChild(div);
+      });
+    }
 
   loadStories();
   </script>

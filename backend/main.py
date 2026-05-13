@@ -32,7 +32,7 @@ def create_story(story: Story):
 def get_stories():
     return stories
 
-@app.delete(/"stories/{index}")
+@app.delete("/stories/{index}")
 def delete_story(index: int):
     if 0 <= index < len(stories):
         removed = stories.pop(index)
