@@ -254,16 +254,61 @@
         const div = document.createElement("div");
       div.className = "book";
 
-      div.onclick = () => openStory(story);
-
-
-      // start invisible
       div.style.opacity = 0;
       div.style.transition = "opacity 0.4s ease";
 
+      div.onclick = () => openStory(story);
+        // title
+        const title =document.createElement("div");
+        title.textContent = (story.is_favorite ? "⭐ ": "") + story.title;
+
+        //start button
+        const starBtn = document.createElement("button");
+        starBtn.textContent = "⭐";
+
+        starBtn.onclick = async (e) => {
+          e.stopPropagation();
+
+          await fetch(`${API}/stories/${story.id}/favorite`, {
+            method: "PATCH"
+          });
+
+  loadStories();
+};
+
+//delete button
+const deleteBtn = document.createElement("button");
+deleteBtn.textContent = "Remove";
+deleteBtn.className = "delete";
+
+deleteBtn.onclick = async (e) => {
+  e.stopPropagation();
+
+  await fetch(`${API}/stories/${story.id}`, {
+    methond: "delete"
+  });
+
+  loadStories()
+};
+
+// build order
+div.appendChild(title);
+div.appendChild(starBtn);
+div.appendChild(deleteBtn);
+
+document.getElementById("stories").appendChild(div);
+
+setTime(() => {
+  div.style.opacity = 1;
+}, 50 * index);
+});
+
       div.innerHTML = `
-        <div>${story.title}</div>
-        <button class="delete">Remove</button>
+        <div>
+          ${story.is_favorite ? "⭐ " : ""}
+          ${story.title}
+         </div>
+         <button class="delete">Remove</button>
       `;
 
       div.querySelector(".delete").onclick = (e) => {

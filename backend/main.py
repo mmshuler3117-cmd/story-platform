@@ -24,18 +24,38 @@ class Story(BaseModel):
 def home():
     return {"message": "backend is Alive"}
 
+from datetime import datetime, timezone
+
 @app.post("/stories")
 def create_story(story: Story):
     conn = get_connection()
     cursor = conn.cursor()
 
+    
+
+    now = datetime.now(timezone.utc).isoformat()
+
     cursor.execute(
-        "Insert into stories (title, content) VALUES (?, ?)",
-        (story.title, story.content)
+        """INSERT INTO stories (title, content, created_at, updated_at, is_favorite, tags) VALUES (?, ?, ?, ?, 0, '')""",
+        (story.title, story.content, now, now)
     )
 
     conn.commit()
+
+    story_id = cursor.lastrowid
     conn.close()
+
+    return {
+        "id": story_id,
+        "title": story.title,
+        "content": story.content,
+        "created_at": now,
+        "updated_at": now,
+        "is_favorite": 0,
+        "tags": ""
+
+
+    }
 
 @app.get("/stories")
 def get_stories():
@@ -62,3 +82,22 @@ def delete_story(story_id: int):
     conn.close()
 
     return {"message": "Deleted"}
+
+@app.patch("/stories/{story_id}/favorite")
+def toggle_favorite(story_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE stories
+        SET is_favorite = CASE is_favorite
+            WHEN 1 THEN 0
+            ELSE 1
+        END
+        WHERE id = ?
+    """, (story_id,))
+
+    conn.commit()
+    conn.close()
+
+    return {"message": "toggled"}
