@@ -7,45 +7,84 @@
       font-family: Georgia, serif;
       max-width: 750px;
       margin: 40px auto;
-      background: linear-gradient(145deg, #2c1f1a, #3a2a24); /* leather brown*/
-      color: #f5eee6; /* off white text*/
+
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.04), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(0,0,0,0.25), transparent 50%),
+        linear-gradient(135deg, #2b1d17, #3a2620, #1e1410);
+
+        color: #f5f1e8;
     }
 
     h1 {
       text-align: center;
       color: #e8d8c3; /* warm light beige*/
       letter-spacing: 1px;
+      text-shadow: 0 0 6px rgba(255, 220, 150, 0.2);
     }
 
-    .card {
-      background: #f8f3ea; /*warm paper*/
-      padding: 16px;
-      margin: 12px 0;
-      border-radius: 10px;
-      border: 1px solid #5a3e36;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-      transition: all 0.25s ease;
+    h2, h3 {
+      color: #d6c2a8;
     }
 
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+    .bookshelf {
+      display: flex;
+      background: linear-gradient(to bottom, #3e2c23, #2b1d17);
+      flex-wrap: wrap;
+      gap: 14px;
+      padding: 20px;
+      margin: 14px 0;
+      border-radius: 12px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    .book {
+      width: 60px;
+      height: 180px;
+      background: linear-gradient(to bottom, #6b3f2a, #4a2b1d);
+      border-radius: 4px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      color: #f4f1ea;
+      font-size: 14px;
+      padding: 8px 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      box-shadow:
+        inset 0 0 6px rgba(255,255,255,0.05),
+        2px 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .book:hover {
+      transform: translateY(-6px) scale(1.05);
+      background: linear-gradient(to bottom, #5a3a2a, #3b2418);
+    }
+
+    .book:nth-child(3n) {
+      background: linear-gradient(to bottom, #7a4a32, #4a2b1d);
     }
 
     input, textarea {
       width: 100%;
       padding: 10px;
       margin: 6px 0;
+
       border-radius: 6px;
-      border: 1px solid #c9b8a6;
-      background: #fffdf8;
+      border: 1px solid #b8a48c;
+
+      background: #fdf6e3;
+      color: #2b2b2b;
+
       font-family: Georgia, serif;
     }
 
     input:focus, textarea:focus {
       outline: none;
       border-color: #8b5e3c;
-      box-shadow: 0 0 5px rgba(139, 94, 60, 0.2);
+      box-shadow: 0 0 6px rgba(139, 94, 60, 0.3);
     }
 
     button {
@@ -54,10 +93,12 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      background: #6b3f2a;
-      color: #fff;
+
+      background: #5a3825;
+      color: #f5f1e8;
+
       font-family: georgia, serif;
-      transition: 0.2s;
+      transition: all 0.2s ease;
     }
 
     button:active {
@@ -65,7 +106,7 @@
     }
 
     button:hover {
-      background: #8b4a2f;
+      background: #7a4a30;
       transform: translate(-1px);
     }
 
@@ -81,12 +122,58 @@
     }
 
     button.delete {
-      background: #8b1e1e;
-      margin-top: 10px;
+      background: #6e1a1a;
     }
 
     button.delete:hover {
-      background: #a52a2a;
+      background: #922222;
+    }
+
+    .editor {
+      background: #fdf6e3;
+      color: #2b2b2b;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #c9b8a6;
+      margin-bottom: 20px;
+    }
+
+    .reader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+
+      background: rgba(20, 12, 8, 0.95);
+      color: #f5f1e8;
+
+      display: flex;
+      flex-direction: colunm;
+      justify-content: center;
+      align-items: center;
+
+      padding: 40px;
+    }
+
+    .reader-content {
+      max-width: 600px;
+      background: #fdf6e3;
+      color: #2b2b2b;
+
+      padding: 20px;
+      border-radius: 10px;
+
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .close-btn {
+      margin-top: 20px;
+      background: #6e1a1a;
     }
   </style>
 </head>
@@ -94,9 +181,11 @@
 
   <h1>My Story App</h1>
 
+  <div id="reader" class="reader hidden"></div>
+
   <h2>Create Story</h2>
 
-  <div class="card">
+  <div class="editor">
     <h3>Create a Story</h3>
     <input id="title" placeholder="Title"/>
     <textarea id="content" placeholder="Write your Story..."></textarea>
@@ -105,10 +194,29 @@
     
   </div>
 
-  <div id="stories"></div>
+  <div id="stories" class="bookshelf"></div>
 
   <script>
     const API = "http://localhost:8000";
+
+
+    function openStory(story) {
+      const reader = document.getElementById("reader");
+
+      reader.innerHTML = `
+      <div class="reader-content">
+        <h2>${story.title}</h2>
+        <p>${story.content}</p>
+        <button class="close-btn" onclick="closeReader()">Close</button>
+      </div>
+    `;
+
+    reader.classList.remove("hidden");
+    }
+
+    function closeReader() {
+      document.getElementById("reader").classList.add("hidden");
+    }
 
     async function submitStory() {
       const title = document.getElementById("title").value;
@@ -142,28 +250,33 @@
         return;
       }
 
-      data.forEach((story) => {
+      data.forEach((story, index) => {
         const div = document.createElement("div");
-      div.className = "card";
+      div.className = "book";
+
+      div.onclick = () => openStory(story);
+
 
       // start invisible
       div.style.opacity = 0;
       div.style.transition = "opacity 0.4s ease";
 
       div.innerHTML = `
-        <div class="story-title">${story.title}</div>
-      <div class="story-content">${story.content}</div>
-      <button class="delete" onclick="deleteStory(${story.id})">
-        Remove
-      </button>
-    `;
+        <div>${story.title}</div>
+        <button class="delete">Remove</button>
+      `;
+
+      div.querySelector(".delete").onclick = (e) => {
+        e.stopPropagation();
+        deleteStory(story.id);
+      }
 
     container.appendChild(div);
 
     // fade in after DOM insertion
     setTimeout(() => {
       div.style.opacity = 1;
-    }, 50);
+    }, 50 * index);
   });
     }
 
