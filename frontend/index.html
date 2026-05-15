@@ -2,9 +2,13 @@
 <html>
 <head>
   <title>Story App</title>
+</head>
+
+<body>
+
   <style>
     body {
-      font-family: Georgia, serif;
+      font-family: Arial, sans-serif;
       max-width: 750px;
       margin: 40px auto;
 
@@ -43,19 +47,30 @@
       height: 180px;
       background: linear-gradient(to bottom, #6b3f2a, #4a2b1d);
       border-radius: 4px;
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      color: #f4f1ea;
-      font-size: 14px;
-      padding: 8px 4px;
-      cursor: pointer;
+
       display: flex;
       align-items: center;
       justify-content: center;
+
+      cursor: pointer;
       transition: all 0.2s ease;
+
       box-shadow:
         inset 0 0 6px rgba(255,255,255,0.05),
         2px 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .book div {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+
+      color: #f4f1ea;
+      font-size: 14px;
+
+      max-height: 160px;
+      overflow: hidden;
+      text-align: center;
+
     }
 
     .book:hover {
@@ -97,7 +112,7 @@
       background: #5a3825;
       color: #f5f1e8;
 
-      font-family: georgia, serif;
+      font-family: inherit;
       transition: all 0.2s ease;
     }
 
@@ -149,7 +164,7 @@
       color: #f5f1e8;
 
       display: flex;
-      flex-direction: colunm;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
 
@@ -179,7 +194,7 @@
 </head>
 <body>
 
-  <h1>My Story App</h1>
+  <h1>My Story App - Updated</h1>
 
   <div id="reader" class="reader hidden"></div>
 
@@ -197,6 +212,9 @@
   <div id="stories" class="bookshelf"></div>
 
   <script>
+
+    console.log("SCRIPT LOADED");
+    
     const API = "http://localhost:8000";
 
 
@@ -219,110 +237,106 @@
     }
 
     async function submitStory() {
-      const title = document.getElementById("title").value;
-      const content = document.getElementById("content").value;
+      try {
+        const title = document.getElementById("title").value;
+        const content = document.getElementById("content").value;
 
-      await fetch(`${API}/stories`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json" },
-        body: JSON.stringify({ title, content })
-      });
+        const res = await fetch(`${API}/stories`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json" },
+          body: JSON.stringify({ title, content })
+        });
 
-      document.getElementById("title").value = "";
-      document.getElementById("content").value = "";
+        console.log(" Submit Story:", await res.json());
 
-      loadStories();
+        document.getElementById("title").value = "";
+        document.getElementById("content").value = "";
+
+        loadStories();
+      } catch (err) {
+        console.error("Submit Failed:", err);
+      }
     }
 
     async function loadStories() {
-      const res = await fetch(`${API}/stories`);
-      const data = await res.json();
+      try{
+        const res = await fetch(`${API}/stories`);
+        const data = await res.json();
 
-      const container = document.getElementById("stories");
-      container.innerHTML = "";
+        console.log("Loaded Storis:", data);
 
-     if (data.length === 0) {
-        container.innerHTML = `
-          <p style="text-align:center; color:#777; font-style:italic;">
-            The library is closed. Open it to view stories.
-          </p>
-        `;
-        return;
+        const container = document.getElementById("stories");
+        container.innerHTML = "";
+
+        if (data.length === 0) {
+          container.innerHTML = `
+            <p style="text-align:center; color:#777; font-style:italic;">
+              The library is closed. Open it to view stories.
+            </p>
+          `;
+          return;
+
+          const title = document.createElement("div");
+
+          title.textContent = 
+            (story.is_favorite ? "favorite" : "") +
+            story.title.slice(0, 20);
+        }
+
+        data.forEach((story, index) => {
+          const div = document.createElement("div");
+         div.className = "book";
+
+          div.style.opacity = 0;
+          div.style.transition = "opacity 0.4s ease";
+
+          div.onclick = () => openStory(story);
+          // title
+          const title =document.createElement("div");
+          title.textContent = (story.is_favorite ? "Favorites" : "") + story.title;
+
+          //start button
+          const starBtn = document.createElement("button");
+          starBtn.textContent = "Favorites";
+
+          starBtn.onclick = async (e) => {
+            e.stopPropagation();
+
+            await fetch(`${API}/stories/${story.id}/favorite`, {
+              method: "PATCH"
+            });
+
+            loadStories();
+          };
+
+          //delete button
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "Remove";
+          deleteBtn.className = "delete";
+
+          deleteBtn.onclick = async (e) => {
+            e.stopPropagation();
+
+           deleteStory(story.id);
+
+            loadStories()
+          };
+
+          // build order
+          div.appendChild(title);
+          div.appendChild(starBtn);
+          div.appendChild(deleteBtn);
+
+          container.appendChild(div);
+
+          setTimeout(() => {
+           div.style.opacity = 1;
+          }, 50 * index);
+        });
+
+      } catch (err) {
+        console.error("Load Failed:", err);
       }
-
-      data.forEach((story, index) => {
-        const div = document.createElement("div");
-      div.className = "book";
-
-      div.style.opacity = 0;
-      div.style.transition = "opacity 0.4s ease";
-
-      div.onclick = () => openStory(story);
-        // title
-        const title =document.createElement("div");
-        title.textContent = (story.is_favorite ? "⭐ ": "") + story.title;
-
-        //start button
-        const starBtn = document.createElement("button");
-        starBtn.textContent = "⭐";
-
-        starBtn.onclick = async (e) => {
-          e.stopPropagation();
-
-          await fetch(`${API}/stories/${story.id}/favorite`, {
-            method: "PATCH"
-          });
-
-  loadStories();
-};
-
-//delete button
-const deleteBtn = document.createElement("button");
-deleteBtn.textContent = "Remove";
-deleteBtn.className = "delete";
-
-deleteBtn.onclick = async (e) => {
-  e.stopPropagation();
-
-  await fetch(`${API}/stories/${story.id}`, {
-    methond: "delete"
-  });
-
-  loadStories()
-};
-
-// build order
-div.appendChild(title);
-div.appendChild(starBtn);
-div.appendChild(deleteBtn);
-
-document.getElementById("stories").appendChild(div);
-
-setTime(() => {
-  div.style.opacity = 1;
-}, 50 * index);
-});
-
-      div.innerHTML = `
-        <div>
-          ${story.is_favorite ? "⭐ " : ""}
-          ${story.title}
-         </div>
-         <button class="delete">Remove</button>
-      `;
-
-      div.querySelector(".delete").onclick = (e) => {
-        e.stopPropagation();
-        deleteStory(story.id);
-      }
-
-    container.appendChild(div);
-
-    // fade in after DOM insertion
-    setTimeout(() => {
-      div.style.opacity = 1;
-    }, 50 * index);
-  });
     }
 
     async function deleteStory(id) {
@@ -339,6 +353,7 @@ setTime(() => {
     }
 
   </script>
+ 
   
 </body>
 </html>
