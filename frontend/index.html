@@ -43,24 +43,14 @@
     }
 
     .book {
-      width: 60px;
-      height: 180px;
-      background: linear-gradient(to bottom, #6b3f2a, #4a2b1d);
-      border-radius: 4px;
-
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      box-shadow:
-        inset 0 0 6px rgba(255,255,255,0.05),
-        2px 2px 6px rgba(0,0,0,0.4);
+      gap: 4px; 
     }
 
-    .book div {
+    .spine {
       writing-mode: vertical-rl;
       text-orientation: mixed;
 
@@ -175,11 +165,36 @@
       max-width: 600px;
       background: #fdf6e3;
       color: #2b2b2b;
-
       padding: 20px;
       border-radius: 10px;
-
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+      animation: openBook 0.25s ease-out;
+    }
+
+    @keyframes openBook {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        tranform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .reader-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #c9b8a6;
+      margin-bottom: 10px;
+    }
+
+    .reader-body {
+      margin-top: 10px;
+      line-height: 1.6;
+      white-space: pre-wrap;
     }
 
     .hidden {
@@ -190,9 +205,18 @@
       margin-top: 20px;
       background: #6e1a1a;
     }
+
+    .meta {
+      font-size: 10px;
+      opacity: 0.7;
+      text-align: center;
+    }
+
+    .book.open {
+      transform: scale(1.2) rotateY(10deg);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
   </style>
-</head>
-<body>
 
   <h1>My Story App - Updated</h1>
 
@@ -204,7 +228,7 @@
     <h3>Create a Story</h3>
     <input id="title" placeholder="Title"/>
     <textarea id="content" placeholder="Write your Story..."></textarea>
-    <button onclick="submitStory()">Submit Story</button>
+    <button onclick="submitStory(); console.log('CLICKED')">Submit Story</button>
     <button onclick="loadStories()">Open Library</button>
     
   </div>
@@ -222,30 +246,47 @@
       const reader = document.getElementById("reader");
 
       reader.innerHTML = `
-      <div class="reader-content">
-        <h2>${story.title}</h2>
-        <p>${story.content}</p>
-        <button class="close-btn" onclick="closeReader()">Close</button>
-      </div>
-    `;
+        <div class="reader-content">
+
+          <div class="reader-header">
+            <h2>${story.title}</h2>
+            <button class="close-btn" onclick="closeReader()">Close</button>
+          </div>
+
+          <div class="reader-body">
+            <p>${story.content}</p>
+          </div>
+
+        </div>
+      `;
 
     reader.classList.remove("hidden");
     }
 
     function closeReader() {
       document.getElementById("reader").classList.add("hidden");
+
+      document.querySelectorAll(".book").forEach(book => {
+        book.classList.remove("open");
+      });
     }
 
     async function submitStory() {
+      console.log("submitStory running");
+
       try {
         const title = document.getElementById("title").value;
         const content = document.getElementById("content").value;
+
+        console.log("DATA:", title, content);
 
         const res = await fetch(`${API}/stories`, {
           method: "POST",
           headers: {"Content-Type": "application/json" },
           body: JSON.stringify({ title, content })
         });
+
+        console.log("AFTER FETCH");
 
         console.log(" Submit Story:", await res.json());
 
@@ -276,7 +317,6 @@
           `;
           return;
 
-          const title = document.createElement("div");
 
           title.textContent = 
             (story.is_favorite ? "favorite" : "") +
@@ -290,11 +330,11 @@
           div.style.opacity = 0;
           div.style.transition = "opacity 0.4s ease";
 
-          div.onclick = () => openStory(story);
-          // title
-          const title =document.createElement("div");
-          title.textContent = (story.is_favorite ? "Favorites" : "") + story.title;
-
+          div.onclick = () => {
+            div.classList.add("open");
+            openStory(story);
+          };
+          
           //start button
           const starBtn = document.createElement("button");
           starBtn.textContent = "Favorites";
@@ -322,8 +362,22 @@
             loadStories()
           };
 
+          const spine = document.createElement("div");
+          spine.className = "spine";
+          spine.textContent = (story.is_favorite ? "favorite " : "") + story.title;
+
+
+          const meta = getStoryMeta(story.content);
+
+          const metaDiv = document.createElement("div");
+          metaDiv.className = "meta";
+
+          metaDiv.textContent = 
+            `${meta.words} words . ${meta.readingTime} min`;
+
           // build order
-          div.appendChild(title);
+          div.appendChild(spine);
+          div.appendChild(metaDiv);
           div.appendChild(starBtn);
           div.appendChild(deleteBtn);
 
@@ -350,6 +404,16 @@
       console.log(data);
 
       loadStories();
+    }
+
+    function getStoryMeta(content) {
+      const words = content.trim().split(/\s+/).length;
+      const readingTime = Math.ceil(words / 200);
+
+      return {
+        words,
+        readingTime
+      };
     }
 
   </script>
