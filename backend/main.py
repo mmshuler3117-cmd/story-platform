@@ -98,6 +98,14 @@ def toggle_favorite(story_id: int):
     """, (story_id,))
 
     conn.commit()
+
+    # fetch new value
+    cursor.execute("SELECT is_favorite FROM stories WHERE id = ?", (story_id,))
+    row = cursor.fetchone()
+
     conn.close()
 
-    return {"message": "toggled"}
+    return {
+        "id": story_id,
+        "is_favorite": bool(row[0])
+    }

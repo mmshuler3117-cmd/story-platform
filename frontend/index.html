@@ -43,11 +43,26 @@
     }
 
     .book {
+      width: 60px;
+      min-height: 180px;
+
+      background: linear-gradient(to bottom, #6b3f2a, #4a2b1d);
+      border-radius: 4px;
+
       display: flex;
       flex-direction: column;
+
       align-items: center;
-      justify-content: center;
-      gap: 4px; 
+      justify-content: space-around;
+
+      padding: 8px 4px;
+
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      box-shadow:
+        inset 0 0 6px rgba(255,255,255,0.05),
+        2px 2px 6px rgba(0,0,0,0.4);
     }
 
     .spine {
@@ -55,10 +70,11 @@
       text-orientation: mixed;
 
       color: #f4f1ea;
-      font-size: 14px;
+      font-size: 12px;
 
-      max-height: 160px;
+      max-height: 140px;
       overflow: hidden;
+
       text-align: center;
 
     }
@@ -216,6 +232,13 @@
       transform: scale(1.2) rotateY(10deg);
       box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     }
+
+    .book.favorite {
+      box-shadow:
+        0 0 12px rgba(255, 215, 0, 0.25),
+        inset 0 0 6px rgba(255,255,255,0.05),
+        2px 2px 6px rgba(0,0,0,0.4);
+    }
   </style>
 
   <h1>My Story App - Updated</h1>
@@ -236,6 +259,33 @@
   <div id="stories" class="bookshelf"></div>
 
   <script>
+    /*
+    =========================================
+    STORY APP - FRONTEND LOGIC
+    =========================================
+
+    purpose:
+    - displays a bookshelf UI for user stories
+    - handles creating, reading, favoriting, and deleting stories
+    - communicates with FastAPI backend at local:8000
+
+    KEY DESIGN DECISIONS:
+    - books are DOM elements dynamically generated from API data
+    - "spine" represents the vertical title on each book
+    - "buttonRow" exists because inline buttons caused layout overlap
+    - UI is intentionally "book like" rather than list based
+
+    BACKEND EXPECTATIONS 
+    - GET /stories - returns array of stories
+    - POST /stories - creates story
+    - PATCH /stories/:id/favorite - toggles and RETURNS is_favorite
+    - DELETE /stories/:id - removes story
+
+    CRITICAL RULE:
+    - frontend NEVER stores permanent state
+    backend is the source of truth
+    ======================================
+    */
 
     console.log("SCRIPT LOADED");
     
@@ -298,7 +348,7 @@
         console.error("Submit Failed:", err);
       }
     }
-
+    
     async function loadStories() {
       try{
         const res = await fetch(`${API}/stories`);
@@ -327,6 +377,12 @@
           const div = document.createElement("div");
          div.className = "book";
 
+         if (story.is_favorite) {
+          div.classList.add("favorite");
+        } else {
+          div.classList.remove("favorite");
+        }
+
           div.style.opacity = 0;
           div.style.transition = "opacity 0.4s ease";
 
@@ -342,11 +398,22 @@
           starBtn.onclick = async (e) => {
             e.stopPropagation();
 
-            await fetch(`${API}/stories/${story.id}/favorite`, {
+            const res = await fetch(`${API}/stories/${story.id}/favorite`, {
               method: "PATCH"
             });
 
-            loadStories();
+            const updated = await res.json();
+            console.log("PATCH RESPONSE:", updated);
+
+            story.is_favorite = updated.is_favorite;
+              
+            // vertical spine text mimics real bookself book titles
+            spine.textContent = 
+              (story.is_favorite ? "Favorite " : "") + story.title;
+
+            // optional visual feedback on button 
+            starBtn.textContent = 
+              story.is_favorite ? "Unfavorite" : "Favorite";
           };
 
           //delete button
@@ -371,15 +438,33 @@
 
           const metaDiv = document.createElement("div");
           metaDiv.className = "meta";
+          
+          // lightweight metadata for readability (word count + reading time)
 
           metaDiv.textContent = 
             `${meta.words} words . ${meta.readingTime} min`;
 
+            // grouping button because inline layout caused overlap in narrow book width
+          const buttonRow = document.createElement("div");
+          buttonRow.style.display = "flex";
+          buttonRow.style.flexDirection = "column";
+          buttonRow.style.gap = "4px";
+          buttonRow.style.alignItems = "center";
+
+          buttonRow.appendChild(starBtn);
+
+          starBtn.style.fontSize = "10px";
+          starBtn.style.padding = "2px 4px";
+
+          buttonRow.appendChild(deleteBtn);
+
+          deleteBtn.style.fontSize = "10px";
+          deleteBtn.style.padding = "2px 4px";
+
           // build order
           div.appendChild(spine);
           div.appendChild(metaDiv);
-          div.appendChild(starBtn);
-          div.appendChild(deleteBtn);
+          div.appendChild(buttonRow);
 
           container.appendChild(div);
 
