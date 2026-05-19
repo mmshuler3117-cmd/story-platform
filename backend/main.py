@@ -10,15 +10,22 @@ init_db()
 #  MUST BE HERE BEFORE ROUTES
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5500"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 class Story(BaseModel):
     title: str
     content: str
+    tags: list[str] = []
+
+@app.get("/test")
+def test():
+    return {"status": "backemd alive"}
+
 
 @app.get("/")
 def home():
@@ -35,9 +42,12 @@ def create_story(story: Story):
 
     now = datetime.now(timezone.utc).isoformat()
 
+    tags_str = ",".join(story.tags)
+
     cursor.execute(
-        """INSERT INTO stories (title, content, created_at, updated_at, is_favorite, tags) VALUES (?, ?, ?, ?, 0, '')""",
-        (story.title, story.content, now, now)
+        """INSERT INTO stories (title, content, created_at, updated_at, is_favorite, tags) 
+        VALUES (?, ?, ?, ?, 0, ?)""",
+        (story.title, story.content, now, now, tags_str)
     )
 
     conn.commit()
@@ -52,7 +62,7 @@ def create_story(story: Story):
         "created_at": now,
         "updated_at": now,
         "is_favorite": 0,
-        "tags": ""
+        "tags": story.tags
 
 
     }
@@ -62,13 +72,24 @@ def get_stories():
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id, title, content FROM stories")
+    cursor.execute("""
+        SELECT id, title, content, is_favorite, created_at, Updated_at, tags 
+        FROM stories
+    """)
     rows = cursor.fetchall()
 
     conn.close()
 
     return [
-        {"id": r[0], "title": r[1], "content": r[2]}
+        {
+            "id": r[0], 
+            "title": r[1], 
+            "content": r[2],
+            "is_favorite": bool(r[3]),
+            "created_at": r[4],
+            "updated_at": r[5],
+            "tags": r[6].split(",") if r[6] else []
+        }
         for r in rows 
     ]
 
